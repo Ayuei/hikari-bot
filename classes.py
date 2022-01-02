@@ -9,15 +9,18 @@ class Loot:
         self.head = 0
         self.weapon = 0
         self.chest = 0
-        self.gloves = 0
-        self.pants = 0
-        self.boots = 0
-        self.earrings = 0
+        self.glove = 0
+        self.pant = 0
+        self.boot = 0
+        self.earring = 0
         self.necklace = 0
         self.bracelet = 0
         self.ring = 0
 
     def add_gear(self, gear_to_add: str):
+        if gear_to_add.endswith("s"):
+            gear_to_add = gear_to_add.rstrip("s").lower()
+
         gear_attr = getattr(self, gear_to_add)
         gear_attr += 1
 
@@ -45,7 +48,6 @@ class Loot:
 @dataclasses.dataclass(init=True)
 class RaidMember:
     name: discord.User.id
-    guild: discord.Guild.id
     obtained_loot: Loot
 
     def to_dict(self):
@@ -84,7 +86,7 @@ class Reminder:
     time: datetime.datetime
 
     def __init__(self, time: str, ctx: discord.Message):
-        self.time = datetime.datetime.strptime(time, "'%A:%H:%M'")
+        self.time = datetime.datetime.strptime(time, "'%a:%H:%M GMT-00:00'")
         self.channel = ctx.channel
         self.hour_buffer = 8
         self.countdown = None
