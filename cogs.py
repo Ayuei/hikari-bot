@@ -1,11 +1,12 @@
+import datetime
+
 import discord
 from discord.ext import commands, tasks
 from database import Database, RaidDatabase
 
 
-
 class ReminderCog(commands.Cog):
-    def __init__(self, bot: discord.ext.commands.Bot, database: RaidDatabase):
+    def __init__(self, bot: discord.ext.commands.Bot, database: Database):
         self.bot = bot
         self.database = database
         self.reminder.start()
@@ -16,15 +17,25 @@ class ReminderCog(commands.Cog):
 
     @tasks.loop(seconds=30)
     async def reminder(self):
-        for r in self.database.reminders:
-            hours = r.countdown//3600
-            minutes = (hours*3600-r.countdown) // 60
-            channel = await self.bot.get_channel(r.channel)
-            await channel.send(f"Time until raid: {r.countdown//3600} hours, {(r.countdown % 3600)} minutes.")
+        for raid in self.database.raids.values():
+            if raid.has_reminder():
+                for raid_reminder in raid.reminders.values():
+                    if raid_reminder.should_remind():
+                        time_delta = raid_reminder.get_countdown()
+
+                        hours = int(time_delta.seconds // 3600)
+                        minutes = int((time_delta.seconds % 3600) // 60)
+
+                        channel = self.bot.get_channel(raid_reminder.channel)
+
+                        await channel.send(f"Raid Reminder! Time until raid: {hours} hours, "
+                                           f"{minutes} minutes.")
+
+                        raid_reminder.last_reminder = datetime.datetime.now()
 
 
 class DatabaseCog(commands.Cog):
-    def __init__(self, bot, database):
+    def __init__(self, bot: discord.ext.commands.Bot, database: Database):
         self.bot = bot
         self.database = database
         self.save_database.start()

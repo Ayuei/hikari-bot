@@ -1,5 +1,5 @@
 [secrets]
-api_key = "xxxxx"
+api_key = "OTI3ODQ5MTA5OTU4ODI4MDUy.YdQM0g.DUn1VowxkGRYqcv9l5n_M2z-A0c"
 
 [directories]
-database_save_path = "xxxxx"
+database_save_path = "./database.pkl"

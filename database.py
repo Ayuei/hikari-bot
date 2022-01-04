@@ -11,32 +11,47 @@ def get_hash(guild, channel):
 
 
 class RaidDatabase:
-    guild: int
     channel: int
-    members: Dict[RaidMember]
-    reminders: List[Reminder]
+    members: Dict[str, RaidMember]
+    reminders: Dict[str, Reminder]
 
-    def __init__(self, guild: int, channel: int):
-        self.guild = guild
+    def __init__(self, channel: int):
         self.channel = channel
         self.members = {}
-        self.reminders = []
+        self.reminders = {}
 
     def get_member(self, name) -> RaidMember:
-        if name not in self.members[name]:
+        if name not in self.members:
             self.add_member(name)
 
         return self.members[name]
+
+    def has_reminder(self):
+        return len(self.reminders) > 0
 
     def add_member(self, name):
         self.members[name] = RaidMember(name=name, obtained_loot=Loot())
 
     def add_reminder(self, ctx, timestamp):
-        self.reminders.append(Reminder(time=timestamp, ctx=ctx))
+        if timestamp in self.reminders:
+            return False
 
+        reminder = Reminder(time=timestamp, ctx=ctx)
+        self.reminders[timestamp] = reminder
+
+        return reminder
+
+    def get_reminders(self):
+        return self.reminders
+
+    def remove_reminder(self, timestamp):
+        try:
+            del self.reminders[timestamp]
+        except KeyError:
+            pass
 
 class Database:
-    raids: Dict[int, RaidDatabase]
+    raids: Dict[str, RaidDatabase]
     path_to_save: str = "database.dill"
 
     def __init__(self):
@@ -53,16 +68,16 @@ class Database:
             path = self.path_to_save
 
         if os.path.exists(path):
-            self.raids = dill.load(self.path_to_save)
+            self.raids = dill.load(open(self.path_to_save, "rb"))
 
     def get(self, ctx: discord.Message) -> RaidDatabase:
-        guild = ctx.guild.name
-        channel = ctx.channel
+        guild = ctx.guild.id
+        channel = ctx.channel.id
 
-        hx = get_hash(guild, channel)
+        hx = str(channel)
 
         if hx not in self.raids:
-            db = RaidDatabase(guild, channel)
+            db = RaidDatabase(channel)
             self.raids[hx] = db
 
             return db

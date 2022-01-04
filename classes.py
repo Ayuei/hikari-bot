@@ -22,7 +22,7 @@ class Loot:
             gear_to_add = gear_to_add.rstrip("s").lower()
 
         gear_attr = getattr(self, gear_to_add)
-        gear_attr += 1
+        setattr(self, gear_to_add, gear_attr+1)
 
     @classmethod
     def get_gear_count(cls, gear_dict):
@@ -34,7 +34,9 @@ class Loot:
         for attr in dir(self):
             # Skip private class variables and non-integers
             if not attr.startswith("__") and not isinstance(attr, int):
-                return_dict[attr] = getattr(self, attr)
+                loot_attr = getattr(self, attr)
+                if isinstance(loot_attr, int):
+                    return_dict[attr] = loot_attr
 
         return return_dict
 
@@ -42,7 +44,7 @@ class Loot:
         for attr in dir(self):
             # Skip private class variables and non-integers
             if not attr.startswith("__") and not isinstance(attr, int):
-                setattr(self, attr, None)
+                setattr(self, attr, 0)
 
 
 @dataclasses.dataclass(init=True)
@@ -77,7 +79,7 @@ class Raid:
 # https://stackoverflow.com/questions/6558535/find-the-date-for-the-first-monday-after-a-given-date
 def next_weekday(d, weekday):
     days_ahead = weekday - d.weekday()
-    if days_ahead <= 0:  # Target day already happened this week
+    if days_ahead < 0:  # Target day already happened this week
         days_ahead += 7
     return d + datetime.timedelta(days_ahead)
 
@@ -86,20 +88,53 @@ class Reminder:
     time: datetime.datetime
 
     def __init__(self, time: str, ctx: discord.Message):
-        self.time = datetime.datetime.strptime(time, "'%a:%H:%M GMT-00:00'")
-        self.channel = ctx.channel
+        days = {
+            "mon": 0,
+            "tue": 1,
+            "wed": 2,
+            "thu": 3,
+            "fri": 4,
+            "sat": 5,
+            "sun": 6
+        }
+
+        self.time = datetime.datetime.strptime(time, "%a %H:%M GMT%z")
+        self.day = days[time.split()[0].lower()]
+
+        self.channel = ctx.channel.id
         self.hour_buffer = 8
-        self.countdown = None
+        self.next_reminder_day = None
+        self.last_reminder = None
 
     # Returns seconds
-    def get_countdown(self) -> int:
-        if not self.countdown:
-            next_reminder_day = next_weekday(datetime.datetime.now(), self.time.weekday())
-            next_reminder_day = next_reminder_day.replace(hour=self.time.hour, minute=self.time.minute)
+    def get_countdown(self) -> datetime.timedelta:
+        time = self.time
 
-            self.countdown = (next_reminder_day - datetime.datetime.now()).total_seconds() - self.hour_buffer * 3600
+        if self.next_reminder_day is None or self.next_reminder_day > datetime.datetime.now(tz=self.time.tzinfo):
+            next_reminder_day = next_weekday(datetime.datetime.now(), self.day)
+            self.next_reminder_day = next_reminder_day.replace(hour=time.hour, minute=time.minute,
+                                                               tzinfo=self.time.tzinfo)
 
-        return self.countdown
+        countdown = (self.next_reminder_day - datetime.datetime.now(tz=self.time.tzinfo))
+
+        print(countdown)
+        print(countdown.days)
+        if countdown.days < 0:
+            countdown = countdown + datetime.timedelta(days=7)
+
+        return countdown
+
+    def should_remind(self):
+        delta = self.get_countdown()
+        if self.last_reminder is None:
+            if delta.total_seconds()//3600 < self.hour_buffer:
+                return True
+            return False
+
+        num_days = (datetime.datetime.now() - self.last_reminder).days
+
+        if num_days > 5 and self.get_countdown().total_seconds()//3600 < self.hour_buffer:
+            return True
 
     def purge(self):
-        self.countdown = None
+        countdown = None
