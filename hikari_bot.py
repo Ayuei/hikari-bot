@@ -107,6 +107,16 @@ async def add_loot(ctx, member: discord.User, item: str):
     await asyncio.sleep(5)
     await msg.delete()
 
+@bot.command()
+@sent_from_guild()
+@commands.has_role("Raid Leader")
+async def remove_loot(ctx, member: discord.User, item: str):
+    database.get(ctx).get_member(member.id).obtained_loot.remove_gear(item)
+
+    msg = await ctx.reply(f"*Removed {item} loot for {member.display_name}*")
+    await asyncio.sleep(5)
+    await msg.delete()
+
 
 # +getloot @member
 # +Print out loot
