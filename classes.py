@@ -24,6 +24,14 @@ class Loot:
         gear_attr = getattr(self, gear_to_add)
         setattr(self, gear_to_add, gear_attr+1)
 
+    def remove_gear(self, gear_to_remove: str):
+        if gear_to_remove.endswith("s"):
+            gear_to_remove = gear_to_remove.rstrip("s").lower()
+
+        gear_attr = getattr(self, gear_to_remove)
+        setattr(self, gear_to_remove, gear_attr - 1)
+
+
     @classmethod
     def get_gear_count(cls, gear_dict):
         return sum(gear_dict.values())
