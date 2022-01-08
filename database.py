@@ -30,7 +30,7 @@ class RaidDatabase:
         return len(self.reminders) > 0
 
     def add_member(self, name):
-        self.members[name] = RaidMember(name=name, obtained_loot=Loot())
+        self.members[name] = RaidMember(name=name, obtained_loot=Loot(), bis=BiSLoot())
 
     def add_reminder(self, ctx, timestamp):
         if timestamp in self.reminders:

@@ -85,13 +85,11 @@ async def get_reminders(ctx):
     embed = discord.Embed(title="Reminders n Countdown")
 
     for key in reminders:
-        print(key)
         countdown = reminders[key].get_countdown()
-        print(countdown)
         days = countdown.days
         hours = int((countdown.total_seconds() - days * (24*3600)) // 3600)
         minutes = int(((countdown.total_seconds() - days * (24*3600)) % 3600) // 60)
-        embed.add_field(name=key, value=f"{hours} hours, {minutes} minutes", inline=True)
+        embed.add_field(name=key, value=f"{days} days, {hours} hours, {minutes} minutes", inline=False)
 
     await ctx.send(embed=embed)
 
@@ -142,7 +140,7 @@ async def get_loot(ctx, member: discord.Member):
     embed.add_field(name="᲼᲼᲼", value="᲼᲼᲼", inline=True)
     embed.add_field(name="Boots", value=gear['boot'], inline=True)
     embed.add_field(name="Total Received", value=sum(gear.values()), inline=False)
-    embed.set_footer(text="Lewd Goblins Beware")
+    embed.set_footer(text="Brought to you by Hikari, the biggest lalafell supporter.")
     await ctx.send(embed=embed)
 
 
