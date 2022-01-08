@@ -2,7 +2,7 @@ import os
 from typing import List, Dict, Union
 import discord
 
-from classes import RaidMember, Loot, Reminder
+from classes import RaidMember, Loot, Reminder, BiSPriority
 import dill
 
 
@@ -30,7 +30,8 @@ class RaidDatabase:
         return len(self.reminders) > 0
 
     def add_member(self, name):
-        self.members[name] = RaidMember(name=name, obtained_loot=Loot(), bis=BiSLoot())
+        loot = Loot()
+        self.members[name] = RaidMember(name=name, obtained_loot=loot, bis=BiSPriority(loot))
 
     def add_reminder(self, ctx, timestamp):
         if timestamp in self.reminders:
@@ -49,6 +50,7 @@ class RaidDatabase:
             del self.reminders[timestamp]
         except KeyError:
             pass
+
 
 class Database:
     raids: Dict[str, RaidDatabase]

@@ -3,6 +3,7 @@ import discord
 import datetime
 from typing import List
 
+
 class MissingBisException(Exception):
     def __init__(self, message="Player's BiS is not added"):
         self.message = message 
@@ -15,8 +16,8 @@ class BiSException(Exception):
         super().__init__(self.message)
 
 
-class BiSPriority(self):
-    def __init__(self, bis, loot):
+class BiSPriority:
+    def __init__(self, loot, bis=None):
         self.bis = None 
         self.loot = Loot() 
         self.discount_factor = 10
@@ -31,12 +32,12 @@ class BiSPriority(self):
 
     def reduce_priority(self, discount=1):
         if discount < 0:
-            raise BisException("Discount cannot be negative")
+            raise BiSException("Discount cannot be negative")
         self.discount_factor -= discount 
 
     def increase_priority(self, increase=1):
-        if discount < 0:
-            raise BisException("Increase cannot be negative")
+        if increase < 0:
+            raise BiSException("Increase cannot be negative")
         self.discount_factor += increase 
 
     def set_priority(self, amount):
@@ -49,14 +50,20 @@ class BiSPriority(self):
         return self.bis.to_dict()
 
     def set_bis(self, bis_list: List[str]):
-        if bis is None and len(bis_list):
+        if self.bis is None and len(bis_list):
             self.bis = Loot()
 
-        for bis in list_list:
+        for bis in bis_list:
             try:
-                self.bis.add_gear(bis)
+                self.bis.set_gear(bis, "savage")
             except:
                 raise MissingBisException(f"Unable to add {bis}, did you spell it correctly?")
+
+        for gear, value in self.bis.to_dict():
+            if self.bis.get(gear) == "savage":
+                continue
+            else:
+                self.bis.set_gear(gear, "tome")
 
 
 class Loot:
@@ -77,7 +84,6 @@ class Loot:
             gear = gear.rstrip("s").lower()
 
         return self.to_dict()[gear]
-        
 
     def add_gear(self, gear_to_add: str):
         if gear_to_add.endswith("s"):
@@ -86,13 +92,19 @@ class Loot:
         gear_attr = getattr(self, gear_to_add)
         setattr(self, gear_to_add, gear_attr+1)
 
+    def set_gear(self, gear_to_add: str, value):
+        if gear_to_add.endswith("s"):
+            gear_to_add = gear_to_add.rstrip("s").lower()
+
+        gear_attr = getattr(self, gear_to_add)
+        setattr(self, gear_to_add, value)
+
     def remove_gear(self, gear_to_remove: str):
         if gear_to_remove.endswith("s"):
             gear_to_remove = gear_to_remove.rstrip("s").lower()
 
         gear_attr = getattr(self, gear_to_remove)
         setattr(self, gear_to_remove, gear_attr - 1)
-
 
     @classmethod
     def get_gear_count(cls, gear_dict):
@@ -121,7 +133,13 @@ class Loot:
 class RaidMember:
     name: discord.User.id
     obtained_loot: Loot
-    bis: BiSLoot
+    bis: BiSPriority
+
+    def get_bis(self):
+        if self.bis is None:
+            self.bis = BiSPriority(self.obtained_loot)
+
+        return self.bis
 
     def to_dict(self):
         return {
@@ -176,6 +194,7 @@ class Reminder:
         self.hour_buffer = 8
         self.next_reminder_day = None
         self.last_reminder = None
+        self.alarm = False
 
     # Returns seconds
     def get_countdown(self) -> datetime.timedelta:
@@ -188,8 +207,6 @@ class Reminder:
 
         countdown = (self.next_reminder_day - datetime.datetime.now(tz=self.time.tzinfo))
 
-        print(countdown)
-        print(countdown.days)
         if countdown.days < 0:
             countdown = countdown + datetime.timedelta(days=7)
 

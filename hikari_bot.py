@@ -1,10 +1,11 @@
 import asyncio
-from typing import Union
+from typing import Union, List
 
 import discord
 import toml
 from discord.ext import commands
 # from decryption library
+import classes
 from database import Database
 from cogs import cogs
 
@@ -104,6 +105,52 @@ async def add_loot(ctx, member: discord.User, item: str):
     msg = await ctx.reply(f"*Added {item} loot for {member.display_name}*")
     await asyncio.sleep(5)
     await msg.delete()
+
+
+# +addloot @member [head/chest/glove/boot(s)/earrings/necklace/bracelet(s)/ring
+@bot.command()
+@sent_from_guild()
+async def set_bis(ctx, member: discord.User, bis: List[str]):
+    database.get(ctx).get_member(member.id).get_bis().set_bis(bis)
+
+    msg = await ctx.reply(f"*Successfully updated BiS for {member.display_name}*")
+    await asyncio.sleep(5)
+    await msg.delete()
+
+    # +getloot @member
+    # +Print out loot
+
+
+@bot.command()
+@sent_from_guild()
+async def get_bis(ctx, member: discord.Member):
+    gear = database.get(ctx).get_member(member.id).get_bis().bis.to_dict()
+    obtained_loot = database.get(ctx).get_member(member.id).obtained_loot
+
+    def received(item):
+        if obtained_loot.to_dict()[item] > 0:
+            return " (Obtained)"
+
+    embed = discord.Embed(title="BiS Goblin Status", description="BiS from savage")
+    embed.set_author(name=member.display_name)
+    embed.set_thumbnail(url="https://c.tenor.com/c1VeLRFcWJAAAAAd/adventuretime-dungeon.gif")
+    embed.add_field(name="Head", value=gear['head']+received('head'), inline=True)
+    embed.add_field(name="Earrings", value=gear['earring']+received('earring'), inline=True)
+    embed.add_field(name="᲼᲼᲼", value="᲼᲼᲼", inline=True)
+    embed.add_field(name="Chest", value=gear['chest']+received('chest'), inline=True)
+    embed.add_field(name="Necklace", value=gear['necklace']+received('necklace'), inline=True)
+    embed.add_field(name="᲼᲼᲼", value="᲼᲼᲼", inline=True)
+    embed.add_field(name="Gloves", value=gear['glove']+received('glove'), inline=True)
+    embed.add_field(name="Bracelets", value=gear['bracelet']+received('bracelet'), inline=True)
+    embed.add_field(name="᲼᲼᲼", value="᲼᲼᲼", inline=True)
+    embed.add_field(name="Pants", value=gear['pant']+received('pants'), inline=True)
+    embed.add_field(name="Ring", value=gear['ring']+received('ring'), inline=True)
+    embed.add_field(name="᲼᲼᲼", value="᲼᲼᲼", inline=True)
+    embed.add_field(name="Boots", value=gear['boot']+received('boot'), inline=True)
+    embed.add_field(name="Total Received", value=sum(obtained_loot.to_dict().values()), inline=False)
+    embed.set_footer(text="Brought to you by Hikari, the biggest lalafell supporter.")
+    await ctx.send(embed=embed)
+
 
 @bot.command()
 @sent_from_guild()

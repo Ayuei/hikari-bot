@@ -20,9 +20,8 @@ class ReminderCog(commands.Cog):
         for raid in self.database.raids.values():
             if raid.has_reminder():
                 for raid_reminder in raid.reminders.values():
+                    time_delta = raid_reminder.get_countdown()
                     if raid_reminder.should_remind():
-                        time_delta = raid_reminder.get_countdown()
-
                         hours = int(time_delta.seconds // 3600)
                         minutes = int((time_delta.seconds % 3600) // 60)
 
@@ -32,6 +31,12 @@ class ReminderCog(commands.Cog):
                                            f"{minutes} minutes.")
 
                         raid_reminder.last_reminder = datetime.datetime.now()
+                        raid_reminder.alarm = False
+
+                    if time_delta.total_seconds() < 30 and raid_reminder.alarm:
+                        channel = self.bot.get_channel(raid_reminder.channel)
+                        await channel.send(f"Gamers, it's time for raid owo!")
+                        raid_reminder.alarm = False
 
 
 class DatabaseCog(commands.Cog):
