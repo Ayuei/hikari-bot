@@ -3,6 +3,61 @@ import discord
 import datetime
 from typing import List
 
+class MissingBisException(Exception):
+    def __init__(self, message="Player's BiS is not added"):
+        self.message = message 
+        super().__init__(self.message)
+
+
+class BiSException(Exception):
+    def __init__(self, message="BiS exception"):
+        self.message = message 
+        super().__init__(self.message)
+
+
+class BiSPriority(self):
+    def __init__(self, bis, loot):
+        self.bis = None 
+        self.loot = Loot() 
+        self.discount_factor = 10
+
+    def get_priority(self, item):
+        if not self.bis:
+            raise MissingBisException()
+
+        # If they don't already have it and it's BiS
+        if not self.loot.get(item) and self.bis.get(item):
+            return True
+
+    def reduce_priority(self, discount=1):
+        if discount < 0:
+            raise BisException("Discount cannot be negative")
+        self.discount_factor -= discount 
+
+    def increase_priority(self, increase=1):
+        if discount < 0:
+            raise BisException("Increase cannot be negative")
+        self.discount_factor += increase 
+
+    def set_priority(self, amount):
+        self.discount_factor = amount 
+
+    def get_factor(self):
+        return self.discount_factor
+
+    def get_bis(self):
+        return self.bis.to_dict()
+
+    def set_bis(self, bis_list: List[str]):
+        if bis is None and len(bis_list):
+            self.bis = Loot()
+
+        for bis in list_list:
+            try:
+                self.bis.add_gear(bis)
+            except:
+                raise MissingBisException(f"Unable to add {bis}, did you spell it correctly?")
+
 
 class Loot:
     def __init__(self):
@@ -16,6 +71,13 @@ class Loot:
         self.necklace = 0
         self.bracelet = 0
         self.ring = 0
+
+    def get(self, gear):
+        if gear.endswith("s"):
+            gear = gear.rstrip("s").lower()
+
+        return self.to_dict()[gear]
+        
 
     def add_gear(self, gear_to_add: str):
         if gear_to_add.endswith("s"):
@@ -59,6 +121,7 @@ class Loot:
 class RaidMember:
     name: discord.User.id
     obtained_loot: Loot
+    bis: BiSLoot
 
     def to_dict(self):
         return {
